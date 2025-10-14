@@ -12,4 +12,6 @@ if [[ -z "$FLAGS" ]]; then
   exit 1
 fi
 
-echo "$FLAGS"
+echo "✅ NGINX_CONFIGURE_FLAGS=$FLAGS"
+
+echo "NGINX_CONFIGURE_FLAGS=$FLAGS" >> $GITHUB_ENV
