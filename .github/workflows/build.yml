@@ -18,16 +18,58 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y curl jq
 
+      # 步骤 1：获取最新版本
       - name: Get latest versions
         run: bash scripts/get-latest.sh
 
       - name: Show detected versions
         run: echo "Nginx=${{ env.NGINX_VERSION }}, OpenSSL=${{ env.OPENSSL_VERSION }}"
 
-      - name: Show latest nginx-full configure flags
-        run: bash scripts/extract-nginx-flags.sh && echo "Nginx-full configure flags=${{ env.NGINX_CONFIGURE_FLAGS }}"
+      # 步骤 2：添加版本跳过检查
+      - name: Check if Nginx version already exists in GHCR
+        id: check_version
+        env:
+          # 使用 GITHUB_TOKEN 作为认证，以防止速率限制
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          IMAGE_NAME: myNginx
+          TAG: ${{ env.NGINX_VERSION }}
+        run: |
+          IMAGE_TAG="${REPO_OWNER}/${IMAGE_NAME}:${TAG}"
+          echo "Checking if image tag ${IMAGE_TAG} already exists in GHCR..."
+          
+          AUTH_HEADER="Authorization: Bearer ${GHCR_TOKEN}"
+          
+          STATUS_CODE=$(curl -sL \
+            -H "${AUTH_HEADER}" \
+            -o /dev/null \
+            -w "%{http_code}" \
+            "https://ghcr.io/v2/${REPO_OWNER}/${IMAGE_NAME}/manifests/${TAG}")
 
+          echo "GHCR API response status code: ${STATUS_CODE}"
+
+          if [ "$STATUS_CODE" == "200" ]; then
+            echo "✅ Image tag ${TAG} already exists. Skipping build and push."
+            echo "should_skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "🚀 Image tag ${TAG} not found. Proceeding with build."
+            echo "should_skip=false" >> $GITHUB_OUTPUT
+          fi
+          
+      # 步骤 3：同步最新的nginx-full配置参数
+      - name: Extract nginx-full configure flags
+        # 仅当不需要跳过时运行
+        if: steps.check_version.outputs.should_skip != 'true'
+        run: sudo bash scripts/extract-nginx-flags.sh
+
+      - name: Show latest nginx-full configure flags
+        if: steps.check_version.outputs.should_skip != 'true'
+        run: echo "Nginx-full configure flags=${{ env.NGINX_CONFIGURE_FLAGS }}"
+
+      # 步骤 4：构建 Docker 镜像
       - name: Build Docker image
+        # 仅当不需要跳过时运行
+        if: steps.check_version.outputs.should_skip != 'true'
         run: |
           docker build \
             --build-arg NGINX_VERSION=${{ env.NGINX_VERSION }} \
@@ -37,10 +79,15 @@ jobs:
             -t ghcr.io/${{ github.repository_owner }}/myNginx:${{ env.NGINX_VERSION }} \
             ./docker
 
+      # 步骤 5 & 6：Login and Push Docker images
       - name: Login to GitHub Container Registry
+        # 仅当不需要跳过时运行
+        if: steps.check_version.outputs.should_skip != 'true'
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
 
       - name: Push Docker images
+        # 仅当不需要跳过时运行
+        if: steps.check_version.outputs.should_skip != 'true'
         run: |
           docker push ghcr.io/${{ github.repository_owner }}/myNginx:${{ env.NGINX_VERSION }}
           docker push ghcr.io/${{ github.repository_owner }}/myNginx:latest
