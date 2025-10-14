@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# 禁用 'e' 选项，让脚本自己处理错误，避免 apt-get source 或 cd 失败导致意外退出
-set -u
+# 移除 set -u，避免 GITHUB_ENV 未绑定错误。
+set -e
 
 echo "Working directory is $(pwd)"
 echo "Fetching Nginx configure flags..."
@@ -12,7 +12,7 @@ mkdir -p "$TEMP_DIR"
 cd "$TEMP_DIR" || { echo "❌ 无法进入临时目录 $TEMP_DIR"; exit 1; } 
 
 # 2. 尝试运行 apt-get source
-apt-get update -qq || true # 允许 update 失败
+apt-get update -qq || true 
 # 使用 || true 确保即使权限警告出现，脚本也不会中断
 apt-get source -qq --yes nginx || true 
 
@@ -32,9 +32,15 @@ if [ -n "$SOURCE_DIR_RAW" ]; then
         echo "Found rules file: $DEBIAN_RULES_PATH"
         
         # 提取 configure 参数。
-        # 注意：使用 cat 读取文件内容，然后用 grep 提取，更加稳健。
-        FLAGS=$(cat "$DEBIAN_RULES_PATH" | grep -oP '(?<=--configure-args=).*' | tail -1 | sed 's/"//g')
-        
+        # 查找所有以 --with 或 --add-module 开头的配置选项，去除注释和空行，
+        # 然后将所有参数合并成一行，用空格分隔。
+        FLAGS=$(cat "$DEBIAN_RULES_PATH" | \
+            grep -E '(--with|--add-module)' | \
+            grep -v '#' | \
+            tr -s ' ' '\n' | \
+            grep '^--' | \
+            tr '\n' ' ' | \
+            sed 's/[[:space:]]*$//') 
     fi
 fi
 
@@ -46,7 +52,8 @@ else
     echo "✅ NGINX_CONFIGURE_FLAGS=$FLAGS"
 fi
 
-# 5. 写入 GitHub 环境变量 (无论是否为空)
+# 5. 写入 GitHub 环境变量 (无论是否为空)。
+# GITHUB_ENV 是绝对路径，无需担心工作目录。
 echo "NGINX_CONFIGURE_FLAGS=$FLAGS" >> "$GITHUB_ENV"
 
 # 6. 成功退出 (0)
