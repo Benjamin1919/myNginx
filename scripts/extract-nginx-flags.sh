@@ -1,23 +1,15 @@
 #!/usr/bin/env bash
-# Extract Debian nginx-full configure flags
-set -euo pipefail
+set -e
 
-sudo apt-get update
-apt-get source nginx || true
+# 从 nginx-full 包中提取 configure 参数
+apt-get update -qq
+apt-get source -qq nginx
+cd nginx-*/debian || exit 1
+FLAGS=$(grep -oP '(?<=--configure-args=).*' rules | tail -1 | sed 's/"//g')
 
-SRCDIR=$(ls -d nginx-* | head -n1 || true)
-if [ -z "$SRCDIR" ]; then
-  echo "# Could not retrieve nginx packaging source"
+if [[ -z "$FLAGS" ]]; then
+  echo "❌ 未找到 nginx-full 的 configure 参数"
   exit 1
 fi
 
-RULES="$SRCDIR/debian/rules"
-
-if [ -f "$RULES" ]; then
-  COMMON=$(sed -n '/common_configure_flags/,/=/p' "$RULES" | grep -E '(^\\s*--|\\\\$)' | tr '\\n' ' ')
-  FULL=$(sed -n '/full_configure_flags/,/=/p' "$RULES" | grep -E '(^\\s*--|\\\\$)' | tr '\\n' ' ')
-  FLAGS="$COMMON $FULL"
-  echo "$FLAGS" | tr -s ' ' | sed 's/^ *//; s/ *$//'
-else
-  echo "# debian/rules not found"
-fi
+echo "$FLAGS"
