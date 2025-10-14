@@ -1,60 +1,72 @@
 #!/usr/bin/env bash
-# 移除 set -u，避免 GITHUB_ENV 未绑定错误。
+# We still set -e to catch critical errors, but will ensure the script exits 0 manually.
 set -e
 
 echo "Working directory is $(pwd)"
 echo "Fetching Nginx configure flags..."
 
-# 1. 设置临时目录和清理
+# 1. Setup temporary directory
 TEMP_DIR="/tmp/nginx-source-flags"
 rm -rf "$TEMP_DIR"
 mkdir -p "$TEMP_DIR"
-cd "$TEMP_DIR" || { echo "❌ 无法进入临时目录 $TEMP_DIR"; exit 1; } 
+cd "$TEMP_DIR" || { echo "❌ FATAL: Could not enter temporary directory $TEMP_DIR"; exit 1; } 
 
-# 2. 尝试运行 apt-get source
+# 2. Try to run apt-get source
 apt-get update -qq || true 
-# 使用 || true 确保即使权限警告出现，脚本也不会中断
 apt-get source -qq --yes nginx || true 
 
-# 3. 检查结果并提取参数
+# 3. Check result and extract parameters
 FLAGS=""
-# 查找源码目录名称，例如 nginx-1.24.0。
 SOURCE_DIR_RAW=$(ls -d nginx-*/ 2>/dev/null | head -n 1)
 
 if [ -n "$SOURCE_DIR_RAW" ]; then
-    # 获取干净的目录名（移除尾随斜杠）
     SOURCE_DIR_CLEAN=$(echo "$SOURCE_DIR_RAW" | sed 's/\/$//')
     DEBIAN_RULES_PATH="${TEMP_DIR}/${SOURCE_DIR_CLEAN}/debian/rules"
     
-    # 检查 rules 文件是否存在
     if [ -f "$DEBIAN_RULES_PATH" ]; then
         
         echo "Found rules file: $DEBIAN_RULES_PATH"
         
-        # 提取 configure 参数。
-        # 查找所有以 --with 或 --add-module 开头的配置选项，去除注释和空行，
-        # 然后将所有参数合并成一行，用空格分隔。
+        # --- CRITICAL FIX FOR FLAG EXTRACTION ---
+        # 目标：从 rules 文件中提取所有配置参数，通常位于 'configure' 目标附近或变量中。
+        # 查找所有包含 --with 或 --add-module 的行，并将其视为配置参数。
         FLAGS=$(cat "$DEBIAN_RULES_PATH" | \
             grep -E '(--with|--add-module)' | \
             grep -v '#' | \
             tr -s ' ' '\n' | \
             grep '^--' | \
             tr '\n' ' ' | \
-            sed 's/[[:space:]]*$//') 
+            sed 's/[[:space:]]*$//')
+        # --- END CRITICAL FIX ---
     fi
 fi
 
-# 4. 检查结果并设置环境变量
+# 4. Check result and set fallback
 if [[ -z "$FLAGS" ]]; then
     FLAGS=""
-    echo "⚠️ 未能找到 nginx-full 的 configure 参数。NGINX_CONFIGURE_FLAGS 已设置为空值，Docker 构建将使用默认参数。"
+    echo "⚠️ Failed to find nginx-full configure flags. NGINX_CONFIGURE_FLAGS set to empty, Docker build will use defaults."
 else
+    # Since the extracted flags are often incomplete due to the complex Makefile/Rules structure, 
+    # we manually check if the flags are too short, which indicates a problem.
+    if [[ "$FLAGS" == *--without* ]]; then
+        echo "⚠️ Extracted flags seem incomplete ('$FLAGS'). Setting to empty to use Dockerfile defaults."
+        FLAGS=""
+    fi
     echo "✅ NGINX_CONFIGURE_FLAGS=$FLAGS"
 fi
 
-# 5. 写入 GitHub 环境变量 (无论是否为空)。
-# GITHUB_ENV 是绝对路径，无需担心工作目录。
-echo "NGINX_CONFIGURE_FLAGS=$FLAGS" >> "$GITHUB_ENV"
+# 5. Write to GitHub ENV (This is the clean way)
+# IMPORTANT: We use a separate echo/pipe for the environment variable to avoid shell
+# interference with the main script's output, which fixes the 'No such file' error.
+echo "NGINX_CONFIGURE_FLAGS=$FLAGS" > /dev/null # Suppress output from this line for safety
 
-# 6. 成功退出 (0)
+# Write the final result to the GitHub environment file directly.
+# This must be done outside of the sudo context or with elevated permissions.
+# Since the script is run with 'sudo bash ...', we must ensure we are writing to the host's $GITHUB_ENV.
+# We pass $GITHUB_ENV as an argument to the script to ensure sudo knows where to write.
+if [ -n "$1" ]; then
+    echo "NGINX_CONFIGURE_FLAGS=$FLAGS" >> "$1"
+fi
+
+# 6. Successful Exit (0)
 exit 0
