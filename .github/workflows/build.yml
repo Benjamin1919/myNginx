@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y curl jq
+        run: sudo apt-get update && sudo apt-get install -y curl jq lsb-release
 
       # 步骤 1：获取最新版本
       - name: Get latest versions
@@ -60,7 +60,8 @@ jobs:
       - name: Enable source repositories
         if: steps.check_version.outputs.should_skip != 'true'
         run: |
-          sudo sed -i -E 's/^deb (.*)$/deb \1\ndeb-src \1/g' /etc/apt/sources.list
+          CODENAME=$(lsb_release -cs)
+          echo "deb-src http://archive.ubuntu.com/ubuntu/ ${CODENAME} main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list.d/ubuntu-sources.list
           sudo apt-get update -qq
           
       - name: Extract nginx-full configure flags
