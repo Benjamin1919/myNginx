@@ -13,7 +13,6 @@ cd "$TEMP_DIR" || { echo "❌ 无法进入临时目录 $TEMP_DIR"; exit 1; }
 # 再次更新源列表，确保 deb-src 生效
 apt-get update -qq
 
-# 在当前目录下载并解压源码。移除了不支持的 '-D' 选项。
 # 注意：如果权限警告 (W: Download is performed unsandboxed...) 再次出现，请忽略它，只要 exit code 不是 100 即可。
 apt-get source -qq --yes nginx || { 
     echo "❌ apt-get source 失败，可能缺少 'deb-src' 源或权限问题。"; 
@@ -23,22 +22,21 @@ apt-get source -qq --yes nginx || {
 # 3. 检查结果并提取参数
 FLAGS=""
 # 查找源码目录名称，例如 nginx-1.24.0。使用通配符匹配目录。
-SOURCE_DIR=$(ls -d nginx-*/ 2>/dev/null | head -n 1)
+SOURCE_DIR_FULL=$(find . -maxdepth 1 -type d -name "nginx-*" -print -quit)
 
-if [ -n "$SOURCE_DIR" ] && [ -d "${SOURCE_DIR}/debian" ]; then
-    # 成功找到源码包，进入 debian 目录
-    cd "${SOURCE_DIR}/debian" || exit 1
-    
+if [ -n "$SOURCE_DIR_FULL" ] && [ -d "${SOURCE_DIR_FULL}/debian" ]; then    
+    # 构造 debian 目录的绝对路径
+    DEBIAN_DIR="${TEMP_DIR}/${SOURCE_DIR_FULL}/debian"  
+    # 临时进入 debian 目录
+    cd "${DEBIAN_DIR}" || exit 1   
     # 提取 configure 参数
     FLAGS=$(grep -oP '(?<=--configure-args=).*' rules | tail -1 | sed 's/"//g')
-    
-    # 返回到临时目录，方便清理（非必需，但良好习惯）
-    cd ../.. >/dev/null
+    # 返回到临时目录，或直接返回主目录
+    cd - >/dev/null
 else
     # 下载失败或源码目录结构不符
     FLAGS=""
 fi
-
 
 # 4. 检查结果并设置环境变量
 if [[ -z "$FLAGS" ]]; then
