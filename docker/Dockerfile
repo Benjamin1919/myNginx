@@ -1,9 +1,5 @@
 # Multi-stage build: build Nginx from source and create a small runtime image.
 
-ARG NGINX_VERSION=1.29.2
-ARG OPENSSL_VERSION=3.6.0
-ARG NGINX_CONFIGURE_FLAGS=""
-
 FROM debian:bookworm-slim AS build
 
 ARG NGINX_VERSION
