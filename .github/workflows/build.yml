@@ -1,0 +1,70 @@
+name: Build and publish myNginx to GHCR
+
+on:
+schedule:
+- cron: '0 3 * * *' # daily check (03:00 UTC)
+workflow_dispatch: {}
+
+permissions:
+contents: read
+packages: write
+id-token: write
+
+jobs:
+build:
+runs-on: ubuntu-latest
+
+steps:
+- name: Checkout
+uses: actions/checkout@v4
+
+- name: Set up QEMU (for cross-platform builds)
+uses: docker/setup-qemu-action@v3
+
+- name: Set up Docker Buildx
+uses: docker/setup-buildx-action@v3
+
+- name: Get latest Nginx version
+id: versions
+run: |
+set -e
+# try to detect latest stable nginx from nginx.org
+NGINX_VER=$(bash scripts/get-latest.sh)
+# default OpenSSL version (user requested): 3.6.0; can be overridden by workflow dispatch inputs or by editing workflow
+OPENSSL_VER=${{ github.event.inputs.openssl_version || '3.6.0' }}
+echo "nginx=${NGINX_VER}" >> $GITHUB_OUTPUT
+echo "openssl=${OPENSSL_VER}" >> $GITHUB_OUTPUT
+
+- name: Enable deb-src for apt and update
+run: |
+sudo sed -n 's/^deb /deb-src /p' /etc/apt/sources.list | sudo tee /etc/apt/sources.list.d/debsrc.list
+sudo apt-get update
+
+- name: Download nginx packaging source and extract configure flags
+id: extract
+run: |
+chmod +x scripts/extract-nginx-flags.sh
+./scripts/extract-nginx-flags.sh > nginx_configure_flags.txt
+echo "flags<<EOF" >> $GITHUB_OUTPUT
+cat nginx_configure_flags.txt >> $GITHUB_OUTPUT
+echo "EOF" >> $GITHUB_OUTPUT
+
+- name: Build and push image
+uses: docker/build-push-action@v6
+with:
+context: .
+file: docker/Dockerfile
+push: true
+platforms: linux/amd64,linux/arm64
+build-args: |
+NGINX_VERSION=${{ steps.versions.outputs.nginx }}
+OPENSSL_VERSION=${{ steps.versions.outputs.openssl }}
+NGINX_CONFIGURE_FLAGS=${{ steps.extract.outputs.flags }}
+tags: |
+ghcr.io/${{ github.repository_owner }}/myNginx:latest
+ghcr.io/${{ github.repository_owner }}/myNginx:nginx-${{ steps.versions.outputs.nginx }}-openssl-${{ steps.versions.outputs.openssl }}
+
+- name: Image digest
+run: |
+echo 'Published image:'
+echo "ghcr.io/${{ github.repository_owner }}/myNginx:latest"
