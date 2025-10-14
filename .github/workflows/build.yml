@@ -67,7 +67,7 @@ jobs:
       - name: Extract nginx-full configure flags
         # 仅当不需要跳过时运行
         if: steps.check_version.outputs.should_skip != 'true'
-        run: sudo bash scripts/extract-nginx-flags.sh
+        run: sudo bash scripts/extract-nginx-flags.sh $GITHUB_ENV
 
       - name: Show latest nginx-full configure flags
         if: steps.check_version.outputs.should_skip != 'true'
