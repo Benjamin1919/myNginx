@@ -1,70 +1,45 @@
-name: Build and publish myNginx to GHCR
+name: Build and Publish myNginx Image
 
 on:
-schedule:
-- cron: '0 3 * * *' # daily check (03:00 UTC)
-workflow_dispatch: {}
-
-permissions:
-contents: read
-packages: write
-id-token: write
+  schedule:
+    - cron: "0 3 * * *"
+  push:
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
-build:
-runs-on: ubuntu-latest
+  build:
+    runs-on: ubuntu-latest
 
-steps:
-- name: Checkout
-uses: actions/checkout@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-- name: Set up QEMU (for cross-platform builds)
-uses: docker/setup-qemu-action@v3
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y curl jq
 
-- name: Set up Docker Buildx
-uses: docker/setup-buildx-action@v3
+      - name: Get latest versions
+        run: bash scripts/get-latest.sh
 
-- name: Get latest Nginx version
-id: versions
-run: |
-set -e
-# try to detect latest stable nginx from nginx.org
-NGINX_VER=$(bash scripts/get-latest.sh)
-# default OpenSSL version (user requested): 3.6.0; can be overridden by workflow dispatch inputs or by editing workflow
-OPENSSL_VER=${{ github.event.inputs.openssl_version || '3.6.0' }}
-echo "nginx=${NGINX_VER}" >> $GITHUB_OUTPUT
-echo "openssl=${OPENSSL_VER}" >> $GITHUB_OUTPUT
+      - name: Show detected versions
+        run: echo "Nginx=${{ env.NGINX_VERSION }}, OpenSSL=${{ env.OPENSSL_VERSION }}"
 
-- name: Enable deb-src for apt and update
-run: |
-sudo sed -n 's/^deb /deb-src /p' /etc/apt/sources.list | sudo tee /etc/apt/sources.list.d/debsrc.list
-sudo apt-get update
+      - name: Extract nginx-full flags
+        run: bash scripts/extract-nginx-flags.sh > docker/configure_flags.txt
 
-- name: Download nginx packaging source and extract configure flags
-id: extract
-run: |
-chmod +x scripts/extract-nginx-flags.sh
-./scripts/extract-nginx-flags.sh > nginx_configure_flags.txt
-echo "flags<<EOF" >> $GITHUB_OUTPUT
-cat nginx_configure_flags.txt >> $GITHUB_OUTPUT
-echo "EOF" >> $GITHUB_OUTPUT
+      - name: Build Docker image
+        run: |
+          docker build \
+            --build-arg NGINX_VERSION=${{ env.NGINX_VERSION }} \
+            --build-arg OPENSSL_VERSION=${{ env.OPENSSL_VERSION }} \
+            -t ghcr.io/${{ github.repository_owner }}/myNginx:latest \
+            -t ghcr.io/${{ github.repository_owner }}/myNginx:${{ env.NGINX_VERSION }} \
+            ./docker
 
-- name: Build and push image
-uses: docker/build-push-action@v6
-with:
-context: .
-file: docker/Dockerfile
-push: true
-platforms: linux/amd64,linux/arm64
-build-args: |
-NGINX_VERSION=${{ steps.versions.outputs.nginx }}
-OPENSSL_VERSION=${{ steps.versions.outputs.openssl }}
-NGINX_CONFIGURE_FLAGS=${{ steps.extract.outputs.flags }}
-tags: |
-ghcr.io/${{ github.repository_owner }}/myNginx:latest
-ghcr.io/${{ github.repository_owner }}/myNginx:nginx-${{ steps.versions.outputs.nginx }}-openssl-${{ steps.versions.outputs.openssl }}
+      - name: Login to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
 
-- name: Image digest
-run: |
-echo 'Published image:'
-echo "ghcr.io/${{ github.repository_owner }}/myNginx:latest"
+      - name: Push Docker images
+        run: |
+          docker push ghcr.io/${{ github.repository_owner }}/myNginx:${{ env.NGINX_VERSION }}
+          docker push ghcr.io/${{ github.repository_owner }}/myNginx:latest
