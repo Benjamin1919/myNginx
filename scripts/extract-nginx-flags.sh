@@ -4,7 +4,7 @@ set -e
 # 从 nginx-full 包中提取 configure 参数
 #apt-get update -qq
 apt-get source -qq nginx
-cd nginx-*/ubuntu || exit 1
+cd nginx-* || exit 1
 FLAGS=$(grep -oP '(?<=--configure-args=).*' rules | tail -1 | sed 's/"//g')
 
 if [[ -z "$FLAGS" ]]; then
