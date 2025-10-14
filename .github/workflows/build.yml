@@ -25,7 +25,7 @@ jobs:
         run: echo "Nginx=${{ env.NGINX_VERSION }}, OpenSSL=${{ env.OPENSSL_VERSION }}"
 
       - name: Show latest nginx-full configure flags
-        run: echo "NGINX_CONFIGURE_FLAGS=${{ env.NGINX_CONFIGURE_FLAGS }}"
+        run: echo "Nginx-full configure flags=${{ env.NGINX_CONFIGURE_FLAGS }}"
 
       - name: Build Docker image
         run: |
