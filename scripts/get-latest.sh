@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
-# Output the latest stable Nginx version number
-set -euo pipefail
+set -e
 
-HTML=$(curl -fsSL https://nginx.org/en/download.html)
-# match nginx-<version>.tar.gz where <version> is x.y.z and prefer the highest stable version
-VER=$(echo "$HTML" | grep -oP 'nginx-\K[0-9]+\.[0-9]+\.[0-9]+(?=\.tar\.gz)' | sort -V | tail -1)
-if [ -z "$VER" ]; then
-echo "1.29.2"
-else
-echo "$VER"
-fi
+# 获取最新Nginx版本
+NGINX_VERSION=$(curl -s https://nginx.org/en/download.html | grep -oP 'nginx-\K[0-9.]+(?=\.tar\.gz)' | sort -V | tail -1)
+
+# 获取最新OpenSSL版本（只取稳定版本）
+OPENSSL_VERSION=$(curl -s https://www.openssl.org/source/ | grep -oP 'openssl-\K3\.[0-9.]+(?=\.tar\.gz)' | sort -V | tail -1)
+
+echo "NGINX_VERSION=$NGINX_VERSION"
+echo "OPENSSL_VERSION=$OPENSSL_VERSION"
+
+# 将结果写入环境文件（供GitHub Actions使用）
+echo "NGINX_VERSION=$NGINX_VERSION" >> $GITHUB_ENV
+echo "OPENSSL_VERSION=$OPENSSL_VERSION" >> $GITHUB_ENV
