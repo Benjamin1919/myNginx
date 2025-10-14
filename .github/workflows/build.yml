@@ -24,14 +24,15 @@ jobs:
       - name: Show detected versions
         run: echo "Nginx=${{ env.NGINX_VERSION }}, OpenSSL=${{ env.OPENSSL_VERSION }}"
 
-      - name: Extract nginx-full flags
-        run: bash scripts/extract-nginx-flags.sh > docker/configure_flags.txt
+      - name: Show latest nginx-full configure flags
+        run: echo "NGINX_CONFIGURE_FLAGS=${{ env.NGINX_CONFIGURE_FLAGS }}"
 
       - name: Build Docker image
         run: |
           docker build \
             --build-arg NGINX_VERSION=${{ env.NGINX_VERSION }} \
             --build-arg OPENSSL_VERSION=${{ env.OPENSSL_VERSION }} \
+            --build-arg NGINX_CONFIGURE_FLAGS=${{ env.NGINX_CONFIGURE_FLAGS }} \
             -t ghcr.io/${{ github.repository_owner }}/myNginx:latest \
             -t ghcr.io/${{ github.repository_owner }}/myNginx:${{ env.NGINX_VERSION }} \
             ./docker
