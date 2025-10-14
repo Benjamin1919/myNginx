@@ -1,23 +1,23 @@
 #!/usr/bin/env bash
-# Attempt to pull Debian packaging for nginx and extract the ./configure invocation from debian/rules
+# Extract Debian nginx-full configure flags
 set -euo pipefail
 
-# Ensure apt source repos are available (workflow already enabled deb-src)
 sudo apt-get update
-# download packaging source into current dir
 apt-get source nginx || true
-# The source dir will be like nginx-<version>
-SRCDIR=$(ls -d nginx-* 2>/dev/null | head -n1 || true)
+
+SRCDIR=$(ls -d nginx-* | head -n1 || true)
 if [ -z "$SRCDIR" ]; then
-echo "# Could not retrieve nginx packaging source; using conservative defaults"
-exit 0
+  echo "# Could not retrieve nginx packaging source"
+  exit 1
 fi
-if [ -f "$SRCDIR/debian/rules" ]; then
-# extract the configure line
-CFG=$(sed -n '/configure/{:a;N;/\)/!ba;p}' $SRCDIR/debian/rules | tr '\n' ' ' | sed 's/.*configure //')
-# Clean up make variables and tabs
-CFG=$(echo "$CFG" | sed -E 's/\$\([^)]+\)//g' | sed -E 's/\s+/ /g')
-echo "$CFG"
+
+RULES="$SRCDIR/debian/rules"
+
+if [ -f "$RULES" ]; then
+  COMMON=$(sed -n '/common_configure_flags/,/=/p' "$RULES" | grep -E '(^\\s*--|\\\\$)' | tr '\\n' ' ')
+  FULL=$(sed -n '/full_configure_flags/,/=/p' "$RULES" | grep -E '(^\\s*--|\\\\$)' | tr '\\n' ' ')
+  FLAGS="$COMMON $FULL"
+  echo "$FLAGS" | tr -s ' ' | sed 's/^ *//; s/ *$//'
 else
-echo "# debian/rules not found; cannot extract flags"
+  echo "# debian/rules not found"
 fi
