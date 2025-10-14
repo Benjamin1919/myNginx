@@ -57,6 +57,12 @@ jobs:
           fi
           
       # 步骤 3：同步最新的nginx-full配置参数
+      - name: Enable source repositories
+        if: steps.check_version.outputs.should_skip != 'true'
+        run: |
+          sudo sed -i -E 's/^deb (.*)$/deb \1\ndeb-src \1/g' /etc/apt/sources.list
+          sudo apt-get update -qq
+          
       - name: Extract nginx-full configure flags
         # 仅当不需要跳过时运行
         if: steps.check_version.outputs.should_skip != 'true'
