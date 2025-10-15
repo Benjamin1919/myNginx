@@ -1,5 +1,5 @@
 # Stage 1: Compile OpenSSL and Nginx
-FROM debian:bookworm-slim AS builder
+FROM debian:trixie-slim AS builder
 
 ARG OPENSSL_VERSION
 ARG NGINX_VERSION
@@ -24,7 +24,7 @@ RUN apt update \
 
 
 # Stage 2: Final build to make image smaller
-FROM debian:bookworm-slim
+FROM debian:trixie-slim
 
 COPY --from=builder /usr/local/nginx       /usr/local/
 COPY --from=builder /usr/local/sbin/nginx  /usr/local/sbin/
