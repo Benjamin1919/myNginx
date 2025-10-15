@@ -52,7 +52,7 @@ jobs:
                     
       - name: Sync Nginx configure parameters
         if: steps.check_version.outputs.should_skip != 'true'
-        run: bash scripts/sync-cfg-flags.sh
+        run: echo "CONFIGURE_FLAGS=$(cat configure/parameters.txt | xargs)" >> $GITHUB_ENV
 
       - name: Build Docker image
         if: steps.check_version.outputs.should_skip != 'true'
