@@ -21,15 +21,20 @@ jobs:
       - name: Get latest versions
         run: bash scripts/get-latest.sh
 
+      - name: Convert owner name to lowercase
+        env:
+          REPO_OWNER: ${{ github.repository_owner }}
+        run: echo "DOCKER_OWNER=${REPO_OWNER,,}" >> $GITHUB_ENV
+
       - name: Check if Nginx version already exists in GHCR
         id: check_version
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO_OWNER: ${{ github.repository_owner }}
-          IMAGE_NAME: myNginx
+          IMAGE_OWNER: ${{ env.DOCKER_OWNER }}
+          IMAGE_NAME: mynginx
           TAG: ${{ env.NGINX_VERSION }}
         run: |
-          IMAGE_TAG="${REPO_OWNER}/${IMAGE_NAME}:${TAG}"
+          IMAGE_TAG="${IMAGE_OWNER}/${IMAGE_NAME}:${TAG}"
           echo "Checking if image tag ${IMAGE_TAG} already exists in GHCR..."
           
           AUTH_HEADER="Authorization: Bearer ${GHCR_TOKEN}"
@@ -38,7 +43,7 @@ jobs:
             -H "${AUTH_HEADER}" \
             -o /dev/null \
             -w "%{http_code}" \
-            "https://ghcr.io/v2/${REPO_OWNER}/${IMAGE_NAME}/manifests/${TAG}")
+            "https://ghcr.io/v2/${IMAGE_OWNER}/${IMAGE_NAME}/manifests/${TAG}")
 
           echo "GHCR API response status code: ${STATUS_CODE}"
 
@@ -55,14 +60,15 @@ jobs:
         run: echo "CONFIGURE_FLAGS='$(cat configure/parameters.txt | xargs)'" >> $GITHUB_ENV
 
       - name: Build Docker image
+        uses: docker/build-push-action@v5
         if: steps.check_version.outputs.should_skip != 'true'
         run: |
           docker build \
             --build-arg NGINX_VERSION=${{ env.NGINX_VERSION }} \
             --build-arg OPENSSL_VERSION=${{ env.OPENSSL_VERSION }} \
             --build-arg CONFIGURE_FLAGS=${{ env.CONFIGURE_FLAGS }} \
-            -t ghcr.io/${{ github.repository_owner }}/mynginx:latest \
-            -t ghcr.io/${{ github.repository_owner }}/mynginx:${{ env.NGINX_VERSION }} \
+            -t ghcr.io/${{ env.DOCKER_OWNER }}/mynginx:latest \
+            -t ghcr.io/${{ env.DOCKER_OWNER }}/mynginx:${{ env.NGINX_VERSION }} \
             ./docker
 
       - name: Login to GitHub Container Registry
@@ -72,5 +78,5 @@ jobs:
       - name: Push Docker images
         if: steps.check_version.outputs.should_skip != 'true'
         run: |
-          docker push ghcr.io/${{ github.repository_owner }}/mynginx:${{ env.NGINX_VERSION }}
-          docker push ghcr.io/${{ github.repository_owner }}/mynginx:latest
+          docker push ghcr.io/${{ env.DOCKER_OWNER }}/mynginx:${{ env.NGINX_VERSION }}
+          docker push ghcr.io/${{ env.DOCKER_OWNER }}/mynginx:latest
