@@ -21,9 +21,6 @@ jobs:
       - name: Get latest versions
         run: bash scripts/get-latest.sh
 
-      - name: Show detected versions
-        run: echo "Nginx=${{ env.NGINX_VERSION }}, OpenSSL=${{ env.OPENSSL_VERSION }}"
-
       - name: Check if Nginx version already exists in GHCR
         id: check_version
         env:
@@ -53,9 +50,9 @@ jobs:
             echo "should_skip=false" >> $GITHUB_OUTPUT
           fi
                     
-      - name: Sync configure flags
+      - name: Sync Nginx configure parameters
         if: steps.check_version.outputs.should_skip != 'true'
-        run: sudo bash scripts/configure-flags.sh && echo "Configure flags=${{ env.CONFIGURE_FLAGS }}"
+        run: echo "CONFIGURE_FLAGS=$(cat configure/parameters.txt | xargs)" >> $GITHUB_ENV
 
       - name: Build Docker image
         if: steps.check_version.outputs.should_skip != 'true'

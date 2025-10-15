@@ -1,0 +1,78 @@
+# syntax=docker/dockerfile:1
+FROM debian:bookworm-slim AS build
+
+ARG NGINX_VERSION=1.29.2
+ARG NGINX_USER=nginx
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates build-essential git curl \
+        mercurial cmake golang ninja-build pkg-config \
+        libpcre3-dev zlib1g-dev libxslt1-dev libgd-dev \
+        libgeoip-dev libxml2-dev libperl-dev libmaxminddb-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# 获取 BoringSSL
+WORKDIR /usr/src
+RUN git clone https://github.com/google/boringssl.git && \
+    mkdir -p boringssl/build && cd boringssl/build && cmake -GNinja .. && ninja
+
+# 获取 Nginx 源码
+RUN curl -O https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz && \
+    tar xzf nginx-${NGINX_VERSION}.tar.gz
+
+# 配置选项对齐 nginx-full + QUIC/HTTP3 支持
+WORKDIR /usr/src/nginx-${NGINX_VERSION}
+RUN ./configure \
+    --prefix=/etc/nginx \
+    --sbin-path=/usr/sbin/nginx \
+    --modules-path=/usr/lib/nginx/modules \
+    --conf-path=/etc/nginx/nginx.conf \
+    --error-log-path=/var/log/nginx/error.log \
+    --http-log-path=/var/log/nginx/access.log \
+    --pid-path=/var/run/nginx.pid \
+    --lock-path=/var/run/nginx.lock \
+    --with-compat \
+    --with-file-aio \
+    --with-threads \
+    --with-http_addition_module \
+    --with-http_auth_request_module \
+    --with-http_dav_module \
+    --with-http_degradation_module \
+    --with-http_flv_module \
+    --with-http_gunzip_module \
+    --with-http_gzip_static_module \
+    --with-http_mp4_module \
+    --with-http_random_index_module \
+    --with-http_realip_module \
+    --with-http_secure_link_module \
+    --with-http_slice_module \
+    --with-http_ssl_module \
+    --with-http_stub_status_module \
+    --with-http_sub_module \
+    --with-http_v2_module \
+    --with-mail \
+    --with-mail_ssl_module \
+    --with-stream \
+    --with-stream_ssl_module \
+    --with-stream_ssl_preread_module \
+    --with-stream_realip_module \
+    --with-cc-opt="-I/usr/src/boringssl/include" \
+    --with-ld-opt="-L/usr/src/boringssl/build/ssl -L/usr/src/boringssl/build/crypto" \
+    --with-http_v3_module && \
+    make -j$(nproc) && make install
+
+# ======= 运行时阶段 =======
+FROM debian:bookworm-slim
+
+RUN adduser --system --no-create-home --group --disabled-login nginx && \
+    mkdir -p /var/cache/nginx /etc/nginx/conf.d && \
+    chown -R nginx:nginx /var/cache/nginx
+
+COPY --from=build /usr/sbin/nginx /usr/sbin/nginx
+COPY --from=build /etc/nginx /etc/nginx
+COPY --from=build /usr/lib/nginx /usr/lib/nginx
+
+STOPSIGNAL SIGQUIT
+USER nginx
+ENTRYPOINT ["/usr/sbin/nginx", "-g", "daemon off;"]
