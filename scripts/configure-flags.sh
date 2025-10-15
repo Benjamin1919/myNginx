@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
-CONFIGURE_FLAGS= \
---prefix=/usr/local/nginx \
+CONFIGURE_FLAGS="--prefix=/usr/local/nginx \
 --sbin-path=/usr/local/sbin/nginx \
 --modules-path=/usr/local/nginx/modules \
 --conf-path=/etc/nginx/nginx.conf \
@@ -45,6 +44,6 @@ CONFIGURE_FLAGS= \
 --with-stream_realip_module \
 --with-stream_geoip_module \
 --with-stream_ssl_preread_module \
---with-compat
+--with-compat"
 
 echo "CONFIGURE_FLAGS=$CONFIGURE_FLAGS" >> $GITHUB_ENV
