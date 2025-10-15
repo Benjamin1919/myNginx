@@ -46,6 +46,6 @@ CONFIGURE_FLAGS="--prefix=/usr/local/nginx \
 --with-stream_ssl_preread_module \
 --with-compat"
 
-echo "CONFIGURE_FLAGS<<EOF" >> $GITHUB_ENV
-echo "$CONFIGURE_FLAGS" >> $GITHUB_ENV
-echo "EOF" >> $GITHUB_ENV
+CONFIGURE_FLAGS_FORMAT=$(echo "$CONFIGURE_FLAGS" | tr -d '\\' | tr '\n' ' ' | sed 's/  */ /g' | xargs)
+
+echo "CONFIGURE_FLAGS=$CONFIGURE_FLAGS_FORMAT" >> $GITHUB_ENV
