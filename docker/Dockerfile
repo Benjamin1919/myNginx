@@ -5,6 +5,8 @@ ARG OPENSSL_VERSION
 ARG NGINX_VERSION
 ARG CONFIGURE_FLAGS
 
+ENV DEBIAN_FRONTEND=noninteractive
+
 WORKDIR /usr/local/src
 
 RUN apt update \
@@ -13,8 +15,8 @@ RUN apt update \
     perl \
     wget \
     ca-certificates \
-    && wget -O openssl-${OPENSSL_VERSION}.tar.gz "https://github.com/openssl/openssl/releases/download/openssl-${OPENSSL_VERSION}/openssl-${OPENSSL_VERSION}.tar.gz" \
-    && wget -O nginx-${NGINX_VERSION}.tar.gz "https://github.com/nginx/nginx/releases/download/release-${NGINX_VERSION}/nginx-${NGINX_VERSION}.tar.gz" \
+    && wget -qO openssl-${OPENSSL_VERSION}.tar.gz "https://github.com/openssl/openssl/releases/download/openssl-${OPENSSL_VERSION}/openssl-${OPENSSL_VERSION}.tar.gz" \
+    && wget -qO nginx-${NGINX_VERSION}.tar.gz "https://github.com/nginx/nginx/releases/download/release-${NGINX_VERSION}/nginx-${NGINX_VERSION}.tar.gz" \
     && tar -zxf openssl-${OPENSSL_VERSION}.tar.gz \
     && tar -zxf nginx-${NGINX_VERSION}.tar.gz \
     && cd nginx-${NGINX_VERSION} \
@@ -25,6 +27,8 @@ RUN apt update \
 
 # Stage 2: Final build to make image smaller
 FROM debian:trixie-slim
+
+ENV DEBIAN_FRONTEND=noninteractive
 
 COPY --from=builder /usr/local/nginx       /usr/local/
 COPY --from=builder /usr/local/sbin/nginx  /usr/local/sbin/
