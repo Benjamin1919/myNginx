@@ -65,9 +65,10 @@ jobs:
           docker build \
             --build-arg NGINX_VERSION=${{ env.NGINX_VERSION }} \
             --build-arg OPENSSL_VERSION=${{ env.OPENSSL_VERSION }} \
+            -f docker/Dockerfile \
             -t ghcr.io/${{ env.DOCKER_OWNER }}/mynginx:latest \
             -t ghcr.io/${{ env.DOCKER_OWNER }}/mynginx:${{ env.NGINX_VERSION }} \
-            ./docker
+            .
 
       - name: Login to GitHub Container Registry
         if: steps.check_version.outputs.should_skip != 'true'
