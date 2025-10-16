@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-CONFIGURE_FLAGS=$(tr '\n' ' ' < configure/parameters.txt | xargs)
+CONFIGURE_FLAGS_RAW=$(tr '\n' ' ' < configure/parameters.txt | xargs)
 
-echo "CONFIGURE_FLAGS=$CONFIGURE_FLAGS" >> $GITHUB_ENV
+echo "CONFIGURE_FLAGS_RAW=$CONFIGURE_FLAGS_RAW" >> $GITHUB_ENV
