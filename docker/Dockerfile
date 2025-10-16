@@ -23,7 +23,7 @@ RUN apt update \
     && mkdir -p /usr/local/share/nginx \
     && cp -r ./conf /usr/local/share/nginx/ \
     && cp -r ./html /usr/local/share/nginx/ \
-    && ./configure ${CONFIGURE_FLAGS} \
+    && ./configure "${CONFIGURE_FLAGS}" \
        --with-openssl=../openssl-${OPENSSL_VERSION} \
     && make -j$(nproc) \
     && make install
