@@ -7,7 +7,7 @@ ARG CONFIGURE_FLAGS
 ENV DEBIAN_FRONTEND=noninteractive
 WORKDIR /usr/local/src
 
-RUN CFG_FLAGS="$(echo '${{ env.CONFIGURE_FLAGS }}' | tr '\n' ' ' | sed 's/ *$//')" \
+RUN CFG_FLAGS="$(echo $CONFIGURE_FLAGS | tr '\n' ' ' | sed 's/ *$//')" \
     && apt update \
     && apt install --no-install-recommends --no-install-suggests -y \
     build-essential \
