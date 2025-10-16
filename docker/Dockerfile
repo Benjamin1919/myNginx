@@ -50,7 +50,7 @@ RUN apt update \
 
 COPY --from=builder /usr/local/share/nginx/conf /etc/nginx
 COPY --from=builder /usr/local/share/nginx/html /usr/local/share/html
-COPY /configure/nginx.conf /etc/nginx/
+COPY ../configure/nginx.conf /etc/nginx/
 
 STOPSIGNAL SIGQUIT
 
