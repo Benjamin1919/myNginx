@@ -69,7 +69,6 @@ jobs:
           docker build \
             --build-arg NGINX_VERSION=${{ env.NGINX_VERSION }} \
             --build-arg OPENSSL_VERSION=${{ env.OPENSSL_VERSION }} \
-            --build-arg CONFIGURE_FLAGS="$(echo '${{ env.CONFIGURE_FLAGS_RAW }}' | tr '\n' ' ' | sed 's/ *$//')" \
             -f docker/Dockerfile \
             -t ghcr.io/${{ env.DOCKER_OWNER }}/mynginx:latest \
             -t ghcr.io/${{ env.DOCKER_OWNER }}/mynginx:${{ env.NGINX_VERSION }} \

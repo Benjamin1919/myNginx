@@ -3,12 +3,10 @@ FROM debian:trixie-slim AS builder
 
 ARG OPENSSL_VERSION
 ARG NGINX_VERSION
-ARG CONFIGURE_FLAGS
 ENV DEBIAN_FRONTEND=noninteractive
 WORKDIR /usr/local/src
 
-RUN CFG_FLAGS="$(echo $CONFIGURE_FLAGS | tr '\n' ' ' | sed 's/ *$//')" \
-    && apt update \
+RUN apt update \
     && apt install --no-install-recommends --no-install-suggests -y \
     build-essential \
     perl \
@@ -26,7 +24,52 @@ RUN CFG_FLAGS="$(echo $CONFIGURE_FLAGS | tr '\n' ' ' | sed 's/ *$//')" \
     && cp -r ./html /usr/local/share/nginx/ \
     && groupadd --system --gid 101 nginx \
     && useradd --system --gid nginx --no-create-home --home /nonexistent --comment "nginx user" --shell /bin/false --uid 101 nginx \
-    && ./configure ${CFG_FLAGS} --with-openssl=../openssl-${OPENSSL_VERSION} \
+    && ./configure \
+         --prefix=/usr/local/nginx \
+         --sbin-path=/usr/local/sbin/nginx \
+         --conf-path=/etc/nginx/nginx.conf \
+         --error-log-path=/var/log/nginx/error.log \
+         --pid-path=/var/run/nginx.pid \
+         --lock-path=/var/run/nginx.lock \
+         --http-log-path=/var/log/nginx/access.log \
+         --http-client-body-temp-path=/var/tmp/nginx_tmp/client_body_temp \
+         --http-proxy-temp-path=/var/tmp/nginx_tmp/proxy_temp \
+         --http-fastcgi-temp-path=/var/tmp/nginx_tmp/fastcgi_temp \
+         --http-uwsgi-temp-path=/var/tmp/nginx_tmp/uwsgi_temp \
+         --http-scgi-temp-path=/var/tmp/nginx_tmp/scgi_temp \
+         --user=nginx \
+         --group=nginx \
+         --with-threads \
+         --with-file-aio \
+         --with-http_ssl_module \
+         --with-http_v2_module \
+         --with-http_v3_module \
+         --with-http_realip_module \
+         --with-http_addition_module \
+         --with-http_xslt_module \
+         --with-http_image_filter_module \
+         --with-http_geoip_module \
+         --with-http_sub_module \
+         --with-http_dav_module \
+         --with-http_flv_module \
+         --with-http_mp4_module \
+         --with-http_gunzip_module \
+         --with-http_gzip_static_module \
+         --with-http_auth_request_module \
+         --with-http_random_index_module \
+         --with-http_secure_link_module \
+         --with-http_degradation_module \
+         --with-http_slice_module \
+         --with-http_stub_status_module \
+         --with-mail \
+         --with-mail_ssl_module \
+         --with-stream \
+         --with-stream_ssl_module \
+         --with-stream_realip_module \
+         --with-stream_geoip_module \
+         --with-stream_ssl_preread_module \
+         --with-compat \
+         --with-openssl=../openssl-${OPENSSL_VERSION} \
     && make -j$(nproc) \
     && make install
 
