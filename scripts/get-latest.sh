@@ -1,19 +1,27 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
 echo "Fetching latest Nginx and OpenSSL versions..."
 
-NGINX_VERSION=$(curl -s --connect-timeout 10 --retry 2 "https://github.com/nginx/nginx/releases" | grep -oP 'releases/tag/release-\K[0-9.]+' | sort -V | tail -1)
+NGINX_VERSION=$(curl -s --connect-timeout 10 --retry 2 --retry-delay 5 "https://api.github.com/repos/nginx/nginx/releases" | grep -Po '"tag_name":\s*"release-\K[0-9.]+' | sort -V | tail -1)
 
-OPENSSL_VERSION=$(curl -s --connect-timeout 10 --retry 2 "https://github.com/openssl/openssl/releases" | grep -oP 'releases/tag/openssl-\K[0-9.]+' | sort -V | tail -1)
+OPENSSL_VERSION=$(curl -s --connect-timeout 10 --retry 2 --retry-delay 5 "https://api.github.com/repos/openssl/openssl/releases" | grep -Po '"tag_name":\s*"openssl-\K[0-9A-Za-z.\-]+' | grep -Evi '(alpha|beta)' | sort -V | tail -1)
 
-if [[ -z "$NGINX_VERSION" || -z "$OPENSSL_VERSION" ]]; then
-  echo "❌ Failed to fetch latest versions"
-  exit 1
+if [ -z "$NGINX_VERSION" ]; then
+  echo "❌ Failed to fetch Nginx latest versions, fallback to 1.29.2"
+  NGINX_VERSION=1.29.2
+else
+  echo "✅ NGINX_VERSION=$NGINX_VERSION"
 fi
 
-echo "✅ NGINX_VERSION=$NGINX_VERSION"
-echo "✅ OPENSSL_VERSION=$OPENSSL_VERSION"
+if [ -z "$OPENSSL_VERSION" ]; then
+  echo "❌ Failed to fetch OpenSSL latest versions, fallback to 3.6.0"
+  OPENSSL_VERSION=3.6.0
+else
+  echo "✅ OPENSSL_VERSION=$OPENSSL_VERSION"
+fi
 
-echo "NGINX_VERSION=$NGINX_VERSION" >> $GITHUB_ENV
-echo "OPENSSL_VERSION=$OPENSSL_VERSION" >> $GITHUB_ENV
+{
+  echo "NGINX_VERSION=${NGINX_VERSION}"
+  echo "OPENSSL_VERSION=${OPENSSL_VERSION}"
+} >> "$GITHUB_ENV"
