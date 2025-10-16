@@ -3,7 +3,7 @@ FROM debian:trixie-slim AS builder
 
 ARG OPENSSL_VERSION
 ARG NGINX_VERSION
-ARG CONFIGURE_FLAGS='$(cat configure/parameters.txt | xargs)'
+ARG CONFIGURE_FLAGS
 ENV DEBIAN_FRONTEND=noninteractive
 WORKDIR /usr/local/src
 
