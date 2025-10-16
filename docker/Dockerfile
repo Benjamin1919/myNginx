@@ -23,7 +23,9 @@ RUN apt update \
     && mkdir -p /usr/local/share/nginx \
     && cp -r ./conf /usr/local/share/nginx/ \
     && cp -r ./html /usr/local/share/nginx/ \
-    && ./configure "${CONFIGURE_FLAGS}" \
+    && groupadd --system --gid 101 nginx \
+    && useradd --system --gid nginx --no-create-home --home /nonexistent --comment "nginx user" --shell /bin/false --uid 101 nginx \
+    && ./configure '${CONFIGURE_FLAGS}' \
        --with-openssl=../openssl-${OPENSSL_VERSION} \
     && make -j$(nproc) \
     && make install
