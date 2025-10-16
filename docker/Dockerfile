@@ -7,7 +7,8 @@ ARG CONFIGURE_FLAGS
 ENV DEBIAN_FRONTEND=noninteractive
 WORKDIR /usr/local/src
 
-RUN apt update \
+RUN CFG_FLAGS="$(echo '${{ env.CONFIGURE_FLAGS }}' | tr '\n' ' ' | sed 's/ *$//')" \
+    && apt update \
     && apt install --no-install-recommends --no-install-suggests -y \
     build-essential \
     perl \
@@ -25,7 +26,7 @@ RUN apt update \
     && cp -r ./html /usr/local/share/nginx/ \
     && groupadd --system --gid 101 nginx \
     && useradd --system --gid nginx --no-create-home --home /nonexistent --comment "nginx user" --shell /bin/false --uid 101 nginx \
-    && ./configure ${CONFIGURE_FLAGS} --with-openssl=../openssl-${OPENSSL_VERSION} \
+    && ./configure ${CFG_FLAGS} --with-openssl=../openssl-${OPENSSL_VERSION} \
     && make -j$(nproc) \
     && make install
 
