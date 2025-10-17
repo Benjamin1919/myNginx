@@ -67,6 +67,7 @@ jobs:
             --build-arg OPENSSL_VERSION=${{ env.OPENSSL_VERSION }} \
             --build-arg ZLIB_VERSION=${{ env.ZLIB_VERSION }} \
             --build-arg PCRE2_VERSION=${{ env.PCRE2_VERSION }} \
+            --no-cache \
             -f docker/Dockerfile \
             -t ghcr.io/${{ env.DOCKER_OWNER }}/mynginx:latest \
             -t ghcr.io/${{ env.DOCKER_OWNER }}/mynginx:${{ env.NGINX_VERSION }} \

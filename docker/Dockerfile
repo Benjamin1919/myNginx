@@ -83,6 +83,7 @@ RUN apt update \
           --with-openssl=../openssl-${OPENSSL_VERSION} \
           --with-zlib=../zlib-${ZLIB_VERSION} \
           --with-pcre=../pcre2-${PCRE2_VERSION} \
+          --with-pcre-jit \
     && make -j$(nproc) \
     && make install \
     && strip /usr/local/sbin/nginx
