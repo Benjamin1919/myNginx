@@ -99,6 +99,7 @@ COPY --from=builder /usr/local/sbin/nginx /usr/local/sbin/
 RUN apt update \
     && apt install --no-install-recommends --no-install-suggests -y \
     ca-certificates \
+    libxml2 \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd --system --gid 101 nginx \
     && useradd --system --gid nginx --no-create-home --home /nonexistent --comment "nginx user" --shell /bin/false --uid 101 nginx \
