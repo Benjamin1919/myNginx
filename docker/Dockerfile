@@ -14,6 +14,8 @@ RUN apt update \
     build-essential \
     wget \
     ca-certificates \
+    libxml2 \
+    libxslt \
     && (wget -qO openssl-${OPENSSL_VERSION}.tar.gz "https://github.com/openssl/openssl/releases/download/openssl-${OPENSSL_VERSION}/openssl-${OPENSSL_VERSION}.tar.gz" \
         || { echo "❌ Failed to fetch OpenSSL from GitHub"; exit 1; }) \
     && (wget -qO nginx-${NGINX_VERSION}.tar.gz "https://github.com/nginx/nginx/releases/download/release-${NGINX_VERSION}/nginx-${NGINX_VERSION}.tar.gz" \
