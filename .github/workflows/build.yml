@@ -59,16 +59,14 @@ jobs:
             echo "should_skip=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Sync Nginx configure parameters
-        if: steps.check_version.outputs.should_skip != 'true'
-        run: bash scripts/sync-cfg-flags.sh
-
       - name: Build Docker image
         if: steps.check_version.outputs.should_skip != 'true'
         run: |
           docker build \
             --build-arg NGINX_VERSION=${{ env.NGINX_VERSION }} \
             --build-arg OPENSSL_VERSION=${{ env.OPENSSL_VERSION }} \
+            --build-arg ZLIB_VERSION=${{ env.ZLIB_VERSION }} \
+            --build-arg PCRE2_VERSION=${{ env.PCRE2_VERSION }} \
             -f docker/Dockerfile \
             -t ghcr.io/${{ env.DOCKER_OWNER }}/mynginx:latest \
             -t ghcr.io/${{ env.DOCKER_OWNER }}/mynginx:${{ env.NGINX_VERSION }} \
