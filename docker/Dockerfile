@@ -14,7 +14,7 @@ RUN apt update \
     build-essential \
     wget \
     ca-certificates \
-    libxml2 \
+    libxml2-dev \
     libxslt1-dev \
     libgd-dev \
     libgeoip-dev \
@@ -80,12 +80,12 @@ RUN apt update \
           --with-stream_realip_module \
           --with-stream_geoip_module \
           --with-stream_ssl_preread_module \
-          --with-compat \
           --with-openssl=../openssl-${OPENSSL_VERSION} \
           --with-zlib=../zlib-${ZLIB_VERSION} \
           --with-pcre=../pcre2-${PCRE2_VERSION} \
     && make -j$(nproc) \
-    && make install
+    && make install \
+    && strip /usr/local/sbin/nginx
 
 # Stage 2: Final build to make image smaller
 FROM debian:trixie-slim
@@ -100,19 +100,22 @@ RUN apt update \
     && apt install --no-install-recommends --no-install-suggests -y \
     ca-certificates \
     libxml2 \
-    libxslt1-dev \
-    libgd-dev \
-    libgeoip-dev \
+    libxslt1.1 \
+    libgd3 \
+    libgeoip1t64 \
+    && apt autoremove -y \
+    && apt autoclean -y \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd --system --gid 101 nginx \
     && useradd --system --gid nginx --no-create-home --home /nonexistent --comment "nginx user" --shell /bin/false --uid 101 nginx \
+    && mkdir -p /etc/nginx/conf.d \
     && mkdir -p /var/log/nginx \
     && mkdir -p /var/tmp/nginx_tmp/{client_body_temp,proxy_temp,fastcgi_temp,uwsgi_temp,scgi_temp} \
     && chown -R nginx:nginx /var/log/nginx \
     && chown -R nginx:nginx /var/tmp/nginx_tmp
 
-COPY --from=builder /usr/local/share/nginx/conf /etc/nginx
-COPY --from=builder /usr/local/share/nginx/html /usr/local/share/html
+COPY --from=builder /usr/local/share/nginx/conf/ /etc/nginx/
+COPY --from=builder /usr/local/share/nginx/html /usr/local/share/
 COPY conf/nginx.conf /etc/nginx/
 
 STOPSIGNAL SIGQUIT
