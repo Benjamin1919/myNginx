@@ -100,6 +100,9 @@ RUN apt update \
     && apt install --no-install-recommends --no-install-suggests -y \
     ca-certificates \
     libxml2 \
+    libxslt1-dev \
+    libgd-dev \
+    libgeoip-dev \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd --system --gid 101 nginx \
     && useradd --system --gid nginx --no-create-home --home /nonexistent --comment "nginx user" --shell /bin/false --uid 101 nginx \
