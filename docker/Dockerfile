@@ -94,7 +94,7 @@ FROM debian:trixie-slim
 ENV DEBIAN_FRONTEND=noninteractive
 WORKDIR /
 
-COPY --from=builder /usr/local/nginx /usr/local/
+COPY --from=builder /usr/local/nginx /usr/local/nginx
 COPY --from=builder /usr/local/sbin/nginx /usr/local/sbin/
 
 RUN apt update \
@@ -116,7 +116,7 @@ RUN apt update \
     && chown -R nginx:nginx /var/tmp/nginx_tmp
 
 COPY --from=builder /usr/local/share/nginx/conf/ /etc/nginx/
-COPY --from=builder /usr/local/share/nginx/html /usr/local/share/
+COPY --from=builder /usr/local/share/nginx/html /usr/local/share/html
 COPY conf/nginx.conf /etc/nginx/
 
 STOPSIGNAL SIGQUIT
