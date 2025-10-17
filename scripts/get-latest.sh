@@ -7,7 +7,7 @@ NGINX_VERSION=$(curl -s --connect-timeout 10 --retry 2 --retry-delay 5 "https://
 
 OPENSSL_VERSION=$(curl -s --connect-timeout 10 --retry 2 --retry-delay 5 "https://api.github.com/repos/openssl/openssl/releases/latest" | jq -r '.tag_name | sub("^openssl-"; "")')
 
-ZLIB_VERSION=$(curl -s --connect-timeout 10 --retry 2 --retry-delay 5 "https://api.github.com/repos/madler/zlib/releases/latest" | jq -r '.tag_name | sub("^zlib-"; "")')
+ZLIB_VERSION=$(curl -s --connect-timeout 10 --retry 2 --retry-delay 5 "https://api.github.com/repos/madler/zlib/releases/latest" | jq -r '.tag_name | sub("^v"; "")')
 
 PCRE2_VERSION=$(curl -s --connect-timeout 10 --retry 2 --retry-delay 5 "https://api.github.com/repos/PCRE2Project/pcre2/releases/latest" | jq -r '.tag_name | sub("^pcre2-"; "")')
 
