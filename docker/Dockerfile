@@ -108,7 +108,6 @@ RUN apt update \
     libsqlite3-0 \
     libdb5.3t64 \
     gcc-14-base \
-    libhogweed6t64 \
     libnettle8t64 \
     && apt autoremove -y \
     && apt autoclean -y \
