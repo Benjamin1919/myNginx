@@ -44,7 +44,7 @@ jobs:
 
           echo "Querying ${API_URL} for existing tags..."
           RESP=$(curl -s -H "${AUTH_HEADER}" -H "Accept: application/vnd.github+json" "${API_URL}")
-          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" -H "${AUTH_HEADER}" -H "Accept: application/vnd.oci.image.manifest.v1+json" "${API_URL}")
+          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" -H "${AUTH_HEADER}" -H "Accept: application/vnd.github+json" "${API_URL}")
           echo "GHCR API response status code: ${STATUS_CODE}"
 
           case $STATUS_CODE in
