@@ -9,7 +9,7 @@ on:
 
 permissions:
   contents: read
-  packages: write
+  packages: read|write
 
 jobs:
   build:
@@ -33,7 +33,7 @@ jobs:
       - name: Check if Nginx version already exists in GHCR
         id: check_version
         env:
-          GHCR_TOKEN: ${{ secrets.myNginx_token }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IMAGE_OWNER: ${{ env.DOCKER_OWNER }}
           IMAGE_NAME: mynginx
           TAG: ${{ env.NGINX_VERSION }}
@@ -42,25 +42,34 @@ jobs:
           echo "Checking if image tag ${IMAGE_TAG} already exists in GHCR..."
           
           AUTH_HEADER="Authorization: Bearer ${GHCR_TOKEN}"
-          
-          STATUS_CODE=$(curl -sL \
+
+          RESPONSE=$(curl -sL \
             -H "${AUTH_HEADER}" \
-            -o /dev/null \
             -w "%{http_code}" \
             "https://ghcr.io/v2/${IMAGE_OWNER}/${IMAGE_NAME}/manifests/${TAG}")
+          
+          STATUS_CODE="${RESPONSE: -3}"
 
           echo "GHCR API response status code: ${STATUS_CODE}"
 
-          if [ "$STATUS_CODE" == "200" ]; then
-            echo "✅ Image tag ${TAG} already exists. Skipping build and push."
-            echo "should_skip=true" >> $GITHUB_OUTPUT
-          elif [ "$STATUS_CODE" == "403" ]; then
-            echo "❌ myNginx_token has no access to read packages."
-            echo "should_skip=true" >> $GITHUB_OUTPUT
-          else
-            echo "🚀 Image tag ${TAG} not found. Proceeding with build."
-            echo "should_skip=false" >> $GITHUB_OUTPUT
-          fi
+          case $STATUS_CODE in
+            200)
+              echo "✅ Image tag ${TAG} already exists. Skipping build and push."
+              echo "should_skip=true" >> $GITHUB_OUTPUT
+              ;;
+            403)
+              echo "❌ GITHUB_TOKEN has no access to read packages."
+              exit 1
+              ;;
+            404)
+              echo "🚀 Image tag ${TAG} not found. Proceeding with build."
+              echo "should_skip=false" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              echo "❌ Unexpected status code: ${STATUS_CODE}"
+              exit 1
+              ;;
+          esac
 
       - name: Build Docker image
         if: steps.check_version.outputs.should_skip != 'true'
@@ -78,7 +87,7 @@ jobs:
 
       - name: Login to GitHub Container Registry
         if: steps.check_version.outputs.should_skip != 'true'
-        run: echo "${{ secrets.myNginx_token }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
 
       - name: Push Docker images
         if: steps.check_version.outputs.should_skip != 'true'
