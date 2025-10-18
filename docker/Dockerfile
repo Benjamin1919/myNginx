@@ -109,7 +109,6 @@ RUN apt update \
     libdb5.3t64 \
     gcc-14-base \
     libstdc++6 \
-    libgmp10 \
     libhogweed6t64 \
     libnettle8t64 \
     sqv \
