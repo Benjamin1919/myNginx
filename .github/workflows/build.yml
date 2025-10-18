@@ -37,29 +37,25 @@ jobs:
           IMAGE_NAME: mynginx
           TAG: ${{ env.NGINX_VERSION }}
         run: |
-          IMAGE_TAG="${IMAGE_OWNER}/${IMAGE_NAME}:${TAG}"
-          echo "Checking if image tag ${IMAGE_TAG} already exists in GHCR..."
-          
-          AUTH_HEADER="Authorization: Bearer ${GHCR_TOKEN}"
-          
-          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-            -H "${AUTH_HEADER}" \
-            -H "Accept: application/vnd.oci.image.manifest.v1+json" \
-            "https://ghcr.io/v2/${IMAGE_OWNER}/${IMAGE_NAME}/manifests/${TAG}")
+          set -euo pipefail
 
+          API_URL="https://api.github.com/users/${IMAGE_OWNER}/packages/container/${IMAGE_NAME}/versions?per_page=100"
+          AUTH_HEADER="Authorization: Bearer ${GHCR_TOKEN}"
+
+          echo "Querying ${API_URL} for existing tags..."
+          RESP=$(curl -s -H "${AUTH_HEADER}" -H "Accept: application/vnd.github+json" "${API_URL}")
+          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" -H "${AUTH_HEADER}" -H "Accept: application/vnd.oci.image.manifest.v1+json" "${API_URL}")
           echo "GHCR API response status code: ${STATUS_CODE}"
 
           case $STATUS_CODE in
             200)
-              echo "✅ Image tag ${TAG} already exists. Skipping build and push."
-              echo "should_skip=true" >> $GITHUB_OUTPUT
               ;;
             403)
-              echo "❌ GITHUB_TOKEN has no access to read packages."
+              echo "❌ GITHUB_TOKEN lacks read permission of packages."
               exit 1
               ;;
             404)
-              echo "🚀 Image tag ${TAG} not found. Proceeding with build."
+              echo "🚀 No packages found. Proceeding with build."
               echo "should_skip=false" >> $GITHUB_OUTPUT
               ;;
             *)
@@ -67,6 +63,16 @@ jobs:
               exit 1
               ;;
           esac
+
+          FOUND=$(echo "${RESP}" | jq -r '.[] | .metadata.container.tags[]?' | grep -Fx "${TAG}" || true)
+
+          if [ -n "${FOUND}" ]; then
+            echo "✅ Image tag ${TAG} already exists. Skipping build and push."
+            echo "should_skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "🚀 Image tag ${TAG} not found. Proceeding with build."
+            echo "should_skip=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Build Docker image
         if: steps.check_version.outputs.should_skip != 'true'
