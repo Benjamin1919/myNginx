@@ -84,7 +84,8 @@ RUN apt update \
           --with-zlib=../zlib-${ZLIB_VERSION} \
           --with-pcre=../pcre2-${PCRE2_VERSION} \
           --with-pcre-jit \
-          --with-cc-opt="-O3" \
+          --with-cc-opt="-O3 -fstack-protector-strong -fPIC -D_FORTIFY_SOURCE=2" \
+          --with-ld-opt="-static -static-libgcc -Wl,-O1 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -L/usr/lib/x86_64-linux-gnu -lxml2 -lgd -lGeoIP -Wl,-Bdynamic -lxslt -lexslt" \
     && make -j$(nproc) \
     && make install \
     && strip /usr/local/sbin/nginx
@@ -99,12 +100,7 @@ COPY --from=builder /usr/local/sbin/nginx /usr/local/sbin/
 
 RUN apt update \
     && apt install --no-install-recommends --no-install-suggests -y \
-    libxml2 \
     libxslt1.1 \
-    libgd3 \
-    libgeoip1t64 \
-    && apt purge -y --auto-remove \
-    gcc-14-base \
     && apt autoremove -y \
     && apt autoclean -y \
     && rm -rf /var/lib/apt/lists/* /var/cache/* /tmp/* /var/tmp/* \
