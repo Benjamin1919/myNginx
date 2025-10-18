@@ -84,6 +84,8 @@ RUN apt update \
           --with-zlib=../zlib-${ZLIB_VERSION} \
           --with-pcre=../pcre2-${PCRE2_VERSION} \
           --with-pcre-jit \
+          --with-cc-opt="-static -static-libgcc -O3" \
+          --with-ld-opt="-static" \
     && make -j$(nproc) \
     && make install \
     && strip /usr/local/sbin/nginx
@@ -96,17 +98,7 @@ WORKDIR /
 
 COPY --from=builder /usr/local/sbin/nginx /usr/local/sbin/
 
-RUN apt update \
-    && apt install --no-install-recommends --no-install-suggests -y \
-    ca-certificates \
-    libxml2 \
-    libxslt1.1 \
-    libgd3 \
-    libgeoip1t64 \
-    && apt autoremove -y \
-    && apt autoclean -y \
-    && rm -rf /var/lib/apt/lists/* \
-    && groupadd --system --gid 101 nginx \
+RUN groupadd --system --gid 101 nginx \
     && useradd --system --gid nginx --no-create-home --home /nonexistent --comment "nginx user" --shell /bin/false --uid 101 nginx \
     && mkdir -p /etc/nginx/conf.d \
     && mkdir -p /var/log/nginx \
