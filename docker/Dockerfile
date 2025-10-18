@@ -104,7 +104,6 @@ RUN apt update \
     libgd3 \
     libgeoip1t64 \
     && apt purge -y --auto-remove \
-    openssl-provider-legacy \
     libsqlite3-0 \
     libdb5.3t64 \
     gcc-14-base \
