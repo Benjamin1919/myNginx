@@ -104,7 +104,6 @@ RUN apt update \
     libgd3 \
     libgeoip1t64 \
     && apt purge -y --auto-remove \
-    libsqlite3-0 \
     gcc-14-base \
     && apt autoremove -y \
     && apt autoclean -y \
