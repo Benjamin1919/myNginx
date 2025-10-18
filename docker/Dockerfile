@@ -106,7 +106,7 @@ RUN apt update \
     libgeoip1t64 \
     && apt autoremove -y \
     && apt autoclean -y \
-    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /var/lib/apt/lists/* /var/cache/* /tmp/* /var/tmp/* \
     && groupadd --system --gid 101 nginx \
     && useradd --system --gid nginx --no-create-home --home /nonexistent --comment "nginx user" --shell /bin/false --uid 101 nginx \
     && mkdir -p /etc/nginx/conf.d \
