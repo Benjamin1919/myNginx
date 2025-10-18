@@ -99,11 +99,20 @@ COPY --from=builder /usr/local/sbin/nginx /usr/local/sbin/
 
 RUN apt update \
     && apt install --no-install-recommends --no-install-suggests -y \
-    ca-certificates \
     libxml2 \
     libxslt1.1 \
     libgd3 \
     libgeoip1t64 \
+    && apt purge -y --auto-remove \
+    openssl-provider-legacy \
+    libsqlite3-0 \
+    libdb5.3t64 \
+    gcc-14-base \
+    libstdc++6 \
+    libgmp10 \
+    libhogweed6t64 \
+    libnettle8t64 \
+    sqv \
     && apt autoremove -y \
     && apt autoclean -y \
     && rm -rf /var/lib/apt/lists/* /var/cache/* /tmp/* /var/tmp/* \
