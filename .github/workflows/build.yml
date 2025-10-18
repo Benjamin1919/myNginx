@@ -9,14 +9,11 @@ on:
 
 permissions:
   contents: read
-  packages: read
+  packages: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      packages: write
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -44,13 +41,11 @@ jobs:
           echo "Checking if image tag ${IMAGE_TAG} already exists in GHCR..."
           
           AUTH_HEADER="Authorization: Bearer ${GHCR_TOKEN}"
-
-          RESPONSE=$(curl -sL \
-            -H "${AUTH_HEADER}" \
-            -w "%{http_code}" \
-            "https://ghcr.io/v2/${IMAGE_OWNER}/${IMAGE_NAME}/manifests/${TAG}")
           
-          STATUS_CODE="${RESPONSE: -3}"
+          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "${AUTH_HEADER}" \
+            -H "Accept: application/vnd.oci.image.manifest.v1+json" \
+            "https://ghcr.io/v2/${IMAGE_OWNER}/${IMAGE_NAME}/manifests/${TAG}")
 
           echo "GHCR API response status code: ${STATUS_CODE}"
 
