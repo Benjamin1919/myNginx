@@ -85,7 +85,7 @@ RUN apt update \
           --with-pcre=../pcre2-${PCRE2_VERSION} \
           --with-pcre-jit \
           --with-cc-opt="-O3 -fstack-protector-strong -fPIC -D_FORTIFY_SOURCE=2" \
-          --with-ld-opt="-Wl,-O1 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -L/usr/lib/x86_64-linux-gnu -Wl,-Bstatic -lxml2 -lgd -lGeoIP" \
+          --with-ld-opt="-L/usr/lib/x86_64-linux-gnu -Wl,-Bstatic -lxml2 -lgd -lGeoIP" \
     && make -j$(nproc) \
     && make install \
     && strip /usr/local/sbin/nginx
