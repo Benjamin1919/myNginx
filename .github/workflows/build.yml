@@ -33,7 +33,7 @@ jobs:
       - name: Check if Nginx version already exists in GHCR
         id: check_version
         env:
-          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_TOKEN: ${{ secrets.myNginx_token }}
           IMAGE_OWNER: ${{ env.DOCKER_OWNER }}
           IMAGE_NAME: mynginx
           TAG: ${{ env.NGINX_VERSION }}
@@ -55,7 +55,7 @@ jobs:
             echo "✅ Image tag ${TAG} already exists. Skipping build and push."
             echo "should_skip=true" >> $GITHUB_OUTPUT
           elif [ "$STATUS_CODE" == "403" ]; then
-            echo "❌ GITHUB_TOKEN has no access to read packages."
+            echo "❌ myNginx_token has no access to read packages."
             echo "should_skip=true" >> $GITHUB_OUTPUT
           else
             echo "🚀 Image tag ${TAG} not found. Proceeding with build."
@@ -78,7 +78,7 @@ jobs:
 
       - name: Login to GitHub Container Registry
         if: steps.check_version.outputs.should_skip != 'true'
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+        run: echo "${{ secrets.myNginx_token }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
 
       - name: Push Docker images
         if: steps.check_version.outputs.should_skip != 'true'
