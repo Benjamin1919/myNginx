@@ -105,7 +105,6 @@ RUN apt update \
     libgeoip1t64 \
     && apt purge -y --auto-remove \
     libsqlite3-0 \
-    libdb5.3t64 \
     gcc-14-base \
     libnettle8t64 \
     && apt autoremove -y \
