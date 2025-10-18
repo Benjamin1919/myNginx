@@ -94,7 +94,6 @@ FROM debian:trixie-slim
 ENV DEBIAN_FRONTEND=noninteractive
 WORKDIR /
 
-COPY --from=builder /usr/local/nginx /usr/local/nginx
 COPY --from=builder /usr/local/sbin/nginx /usr/local/sbin/
 
 RUN apt update \

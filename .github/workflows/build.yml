@@ -54,6 +54,9 @@ jobs:
           if [ "$STATUS_CODE" == "200" ]; then
             echo "✅ Image tag ${TAG} already exists. Skipping build and push."
             echo "should_skip=true" >> $GITHUB_OUTPUT
+          else if [ "$STATUS_CODE" == "403" ]; then
+            echo "❌ GITHUB_TOKEN has no access to read packages."
+            echo "should_skip=true" >> $GITHUB_OUTPUT
           else
             echo "🚀 Image tag ${TAG} not found. Proceeding with build."
             echo "should_skip=false" >> $GITHUB_OUTPUT
