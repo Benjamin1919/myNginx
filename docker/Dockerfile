@@ -111,7 +111,6 @@ RUN apt update \
     libstdc++6 \
     libhogweed6t64 \
     libnettle8t64 \
-    sqv \
     && apt autoremove -y \
     && apt autoclean -y \
     && rm -rf /var/lib/apt/lists/* /var/cache/* /tmp/* /var/tmp/* \
