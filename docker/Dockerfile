@@ -106,7 +106,6 @@ RUN apt update \
     && apt purge -y --auto-remove \
     libsqlite3-0 \
     gcc-14-base \
-    libnettle8t64 \
     && apt autoremove -y \
     && apt autoclean -y \
     && rm -rf /var/lib/apt/lists/* /var/cache/* /tmp/* /var/tmp/* \
