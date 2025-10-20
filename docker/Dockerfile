@@ -5,8 +5,8 @@ ARG OPENSSL_VERSION
 ARG NGINX_VERSION
 ARG ZLIB_VERSION
 ARG PCRE2_VERSION
-ARG CCOPT="-static -O3 -fstack-protector-strong -Wformat -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -fPIC -fexceptions --param=ssp-buffer-size=4 -m64 -mtune=generic"
-ARG LDOPT="-static -Wl,-z,relro -Wl,-z,now -Wl,--as-needed -pie -Wl,--as-needed,-O1,--sort-common"
+ARG CCOPT="-static -O3 -pipe -fstack-protector-strong -Wformat -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 --param=ssp-buffer-size=4 -m64 -mtune=generic -I /usr/include/libxml2/libxml"
+ARG LDOPT="-static -Wl,-z,relro -Wl,-z,now -Wl,--as-needed -L /usr/lib/x86_64-linux-gnu"
 
 ENV DEBIAN_FRONTEND=noninteractive
 WORKDIR /usr/local/src
