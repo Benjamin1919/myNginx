@@ -5,6 +5,8 @@ ARG OPENSSL_VERSION
 ARG NGINX_VERSION
 ARG ZLIB_VERSION
 ARG PCRE2_VERSION
+ARG CCOPT="-static -O3 -fstack-protector-strong -Wformat -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -fPIC -fexceptions --param=ssp-buffer-size=4 -m64 -mtune=generic"
+ARG LDOPT="-static -Wl,-z,relro -Wl,-z,now -Wl,--as-needed -pie -Wl,--as-needed,-O1,--sort-common"
 
 ENV DEBIAN_FRONTEND=noninteractive
 WORKDIR /usr/local/src
@@ -84,8 +86,8 @@ RUN apt update \
           --with-zlib=../zlib-${ZLIB_VERSION} \
           --with-pcre=../pcre2-${PCRE2_VERSION} \
           --with-pcre-jit \
-          --with-cc-opt="-O3 -fstack-protector-strong -fPIC -D_FORTIFY_SOURCE=2" \
-          --with-ld-opt="-Wl,-O1 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now" \
+          --with-cc-opt="${CCOPT}" \
+          --with-ld-opt="${LDOPT}" \
     && make -j$(nproc) \
     && make install \
     && strip /usr/local/sbin/nginx
@@ -98,15 +100,7 @@ WORKDIR /
 
 COPY --from=builder /usr/local/sbin/nginx /usr/local/sbin/
 
-RUN apt update \
-    && apt install --no-install-recommends --no-install-suggests -y \
-    libxml2 \
-    libxslt1.1 \
-    libgd3 \
-    libgeoip1t64 \
-    && apt autoremove -y \
-    && apt autoclean -y \
-    && rm -rf /var/lib/apt/lists/* /var/cache/* /tmp/* /var/tmp/* \
+RUN rm -rf /var/lib/apt/lists/* /var/cache/* /tmp/* /var/tmp/* \
     && groupadd --system --gid 101 nginx \
     && useradd --system --gid nginx --no-create-home --home /nonexistent --comment "nginx user" --shell /bin/false --uid 101 nginx \
     && mkdir -p /etc/nginx/conf.d \
