@@ -1,10 +1,10 @@
 name: Build and Publish myNginx Image
 
 on:
-  schedule:
-    - cron: "0 3 * * *"
+#  schedule:
+#    - cron: "0 3 * * *"
   push:
-    branches: [ main ]
+    branches: [ dev ]
   workflow_dispatch:
 
 permissions:
@@ -34,7 +34,7 @@ jobs:
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IMAGE_OWNER: ${{ env.DOCKER_OWNER }}
-          IMAGE_NAME: mynginx
+          IMAGE_NAME: mynginx-dev
           TAG: ${{ env.NGINX_VERSION }}
         run: |
           set -euo pipefail
@@ -84,8 +84,8 @@ jobs:
             --build-arg PCRE2_VERSION=${{ env.PCRE2_VERSION }} \
             --no-cache \
             -f docker/Dockerfile \
-            -t ghcr.io/${{ env.DOCKER_OWNER }}/mynginx:latest \
-            -t ghcr.io/${{ env.DOCKER_OWNER }}/mynginx:${{ env.NGINX_VERSION }} \
+            -t ghcr.io/${{ env.DOCKER_OWNER }}/mynginx-dev:latest \
+            -t ghcr.io/${{ env.DOCKER_OWNER }}/mynginx-dev:${{ env.NGINX_VERSION }} \
             .
 
       - name: Login to GitHub Container Registry
@@ -95,5 +95,5 @@ jobs:
       - name: Push Docker images
         if: steps.check_version.outputs.should_skip != 'true'
         run: |
-          docker push ghcr.io/${{ env.DOCKER_OWNER }}/mynginx:${{ env.NGINX_VERSION }}
-          docker push ghcr.io/${{ env.DOCKER_OWNER }}/mynginx:latest
+          docker push ghcr.io/${{ env.DOCKER_OWNER }}/mynginx-dev:${{ env.NGINX_VERSION }}
+          docker push ghcr.io/${{ env.DOCKER_OWNER }}/mynginx-dev:latest
